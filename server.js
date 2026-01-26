@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -9,6 +10,7 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 // Request logger
 app.use((req, res, next) => {
@@ -42,6 +44,11 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+
+// Serve simulator at root
+app.get('/simulator', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'simulator.html'));
+});
 
 // Test route
 app.get('/api/test', (req, res) => {
