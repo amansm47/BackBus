@@ -10,7 +10,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: ["https://fron-bus.vercel.app", "http://localhost:3000"],
     methods: ["GET", "POST"]
   }
 });
