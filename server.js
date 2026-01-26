@@ -64,6 +64,29 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
 });
 
+// API endpoint to receive location updates from simulator
+app.post('/api/buses/location', (req, res) => {
+  const { busId, latitude, longitude, speed, status } = req.body;
+  
+  // Find and update the bus
+  const busIndex = buses.findIndex(bus => bus.number === busId || bus.id === 1);
+  if (busIndex !== -1) {
+    buses[busIndex] = {
+      ...buses[busIndex],
+      lat: latitude,
+      lng: longitude,
+      speed: speed || 0,
+      status: status || 'running'
+    };
+    
+    // Broadcast to all connected clients
+    io.emit('busUpdate', buses);
+    console.log(`Bus ${busId} location updated:`, { latitude, longitude, speed });
+  }
+  
+  res.json({ success: true, message: 'Location updated' });
+});
+
 // Routes
 app.post('/api/users', async (req, res) => {
   try {
@@ -117,22 +140,22 @@ io.on('connection', (socket) => {
   // Send initial bus data
   socket.emit('busUpdate', buses);
   
+  // Handle location updates from simulator
+  socket.on('updateBusLocation', (data) => {
+    const { busId, lat, lng, speed, passengers } = data;
+    const busIndex = buses.findIndex(bus => bus.id === busId);
+    
+    if (busIndex !== -1) {
+      buses[busIndex] = { ...buses[busIndex], lat, lng, speed, passengers };
+      // Broadcast updated location to all clients
+      io.emit('busUpdate', buses);
+    }
+  });
+  
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
-
-// Simulate bus movement
-setInterval(() => {
-  buses = buses.map(bus => ({
-    ...bus,
-    lat: bus.lat + (Math.random() - 0.5) * 0.001,
-    lng: bus.lng + (Math.random() - 0.5) * 0.001,
-    passengers: Math.max(0, bus.passengers + Math.floor(Math.random() * 6 - 3))
-  }));
-  
-  io.emit('busUpdate', buses);
-}, 3000);
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
