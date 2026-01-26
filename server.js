@@ -105,13 +105,34 @@ app.get('/api/users/:email', async (req, res) => {
 });
 
 // Socket.IO connection handling
+let buses = [
+  { id: 1, number: 'Bus 42A', lat: 28.6139, lng: 77.2090, speed: 25, passengers: 15, route: 'City Center - University' },
+  { id: 2, number: 'Bus 15B', lat: 28.6129, lng: 77.2295, speed: 30, passengers: 22, route: 'Mall - Station' },
+  { id: 3, number: 'Bus 23C', lat: 28.6169, lng: 77.2265, speed: 20, passengers: 8, route: 'Airport - Downtown' }
+];
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+  
+  // Send initial bus data
+  socket.emit('busUpdate', buses);
   
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
+
+// Simulate bus movement
+setInterval(() => {
+  buses = buses.map(bus => ({
+    ...bus,
+    lat: bus.lat + (Math.random() - 0.5) * 0.001,
+    lng: bus.lng + (Math.random() - 0.5) * 0.001,
+    passengers: Math.max(0, bus.passengers + Math.floor(Math.random() * 6 - 3))
+  }));
+  
+  io.emit('busUpdate', buses);
+}, 3000);
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
