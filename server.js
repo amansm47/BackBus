@@ -10,7 +10,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://fron-bus.vercel.app", "http://localhost:3000"],
+    origin: ["https://fron-bus.vercel.app", "http://localhost:3000", "https://your-frontend-domain.vercel.app"],
     methods: ["GET", "POST"]
   }
 });
@@ -160,3 +160,6 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Export for Vercel
+module.exports = app;
